@@ -1,0 +1,11 @@
+build/
+data/*
+!data/README.md
+*.o
+*.obj
+*.exe
+*.pdb
+*.ilk
+.vs/
+__pycache__/
+*.log
