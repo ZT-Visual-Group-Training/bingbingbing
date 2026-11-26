@@ -1,0 +1,6 @@
+build/
+data/
+*.avi
+*.mp4
+out/
+*.png
