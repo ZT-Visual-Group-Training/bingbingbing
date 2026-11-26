@@ -1,0 +1,8 @@
+%YAML:1.0
+# Aiming / ballistic parameters
+# bullet_speed : muzzle speed of the projectile, m/s (RM referee default 20 m/s)
+# latency_ms   : fixed system latency (exposure + processing + communication), ms
+# gravity      : gravity acceleration, m/s^2
+bullet_speed: 20.0
+latency_ms: 30.0
+gravity: 9.8
