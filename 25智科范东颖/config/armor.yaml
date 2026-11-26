@@ -1,0 +1,10 @@
+%YAML:1.0
+# Armor size used for the PnP object points (millimeters).
+# The 4 detected points are the two ends of the two light bars, so:
+#   width  = distance between the two light bars (RM small armor: 135 mm)
+#   height = light bar length (about 56 mm), NOT the height of the plate (125 mm)
+armor_width_mm: 135
+armor_height_mm: 56
+
+# Armor color to detect: "red" / "blue" / "both"
+enemy_color: "both"

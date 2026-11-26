@@ -1,0 +1,16 @@
+# 构建产物
+build/
+.vs/
+bin/
+obj/
+out/
+
+# 原始考核数据（体积大，不提交；仅保留 data/README.md）
+data/*
+!data/README.md
+2026-11-13_*/
+*.avi
+
+# 临时文件
+*.tmp
+*.log
