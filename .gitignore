@@ -1,0 +1,20 @@
+# 构建产物
+build/
+build_rel/
+cmake-build-*/
+cmake-build-debug/
+cmake-build-release/
+out/
+*.o *.obj *.exe *.a *.lib *.dll *.so *.dylib
+CMakeCache.txt CMakeFiles/ cmake_install.cmake Makefile build.ninja
+.vscode/ .idea/ *.iml
+
+# 官方数据与结果视频（体积大，不入库；见 README 获取方式）
+data/
+results/
+*.avi *.mp4 *.mkv *.mov *.wmv
+*.zip *.7z *.tar *.gz
+*.png *.jpg *.jpeg
+
+# 运行临时产物
+armor_result.png red_mask.png frame_dump.png

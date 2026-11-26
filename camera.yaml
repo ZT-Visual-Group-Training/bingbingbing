@@ -1,0 +1,19 @@
+%YAML:1.0
+# Camera intrinsics for official video 2026-11-13_18-25-25_462305.
+# Resolution 1440x1080, translation_unit = m.
+# Key 'distortion_coefficients' matches loadCalib() in main.cpp.
+image_width: 1440
+image_height: 1080
+camera_matrix: !!opencv-matrix
+   rows: 3
+   cols: 3
+   dt: d
+   data: [ 2334.310067789214, 0., 722.621333492868,
+           0., 2335.8999103578203, 534.6208330554873,
+           0., 0., 1. ]
+distortion_coefficients: !!opencv-matrix
+   rows: 5
+   cols: 1
+   dt: d
+   data: [ -0.08000880545053471, 0.08567503445336759,
+           0.002790303946222533, -0.0007315334877910064, 0. ]
