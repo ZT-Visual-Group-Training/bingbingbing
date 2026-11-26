@@ -1,0 +1,10 @@
+build/
+output/
+data/
+*.avi
+*.mp4
+*.jpg
+*.png
+!docs/*.png
+.vscode/
+compile_commands.json

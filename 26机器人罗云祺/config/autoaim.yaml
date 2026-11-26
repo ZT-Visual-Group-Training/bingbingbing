@@ -1,0 +1,48 @@
+# ---------- 数据 ----------
+dataset_root: data
+calibration: calibration/calibration.yaml
+video: video/video.avi
+frames_csv: video/frames.csv
+frame_imu_csv: imu/frame_imu.csv
+
+# ---------- 装甲板物理尺寸（mm）----------
+# 小装甲板:灯条中心距135mm，灯条长56mm
+# 图像四角（顺时针，图像坐标 y 向下）：
+#   TL 左灯条上端 → TR 右灯条上端 → BR 右灯条下端 → BL 左灯条下端
+armor.small_width_mm: 135.0
+armor.small_height_mm: 56.0
+# armor.big_width_mm: 230.0
+# armor.big_height_mm: 56.0
+
+# ---------- 传统检测 ----------
+# 灰度二值化阈值
+detector.gray_threshold: 150
+# 灯条方向与图像竖直方向的夹角上限
+detector.max_angle_error_deg: 45.0
+# 灯条长宽比 = 长度 / 宽度
+detector.min_lightbar_ratio: 1.5
+detector.max_lightbar_ratio: 20.0
+# 灯条最短像素长度
+detector.min_lightbar_length_px: 8.0
+# 装甲板宽高比 = 两灯条中心距 / 较长灯条长度
+detector.min_armor_ratio: 1.0
+detector.max_armor_ratio: 5.0
+# 左右灯条长度比 = 长 / 短
+detector.max_side_ratio: 1.5
+# 灯条方向与两灯条中心连线的垂直方向的夹角上限
+detector.max_rectangular_error_deg: 25.0
+# 装甲板最小像素宽
+detector.min_armor_width_px: 60
+# 0=红方，1=蓝方；-1=不按颜色过滤
+detector.enemy_color: 0
+# ROI: [x, y, w, h]
+detector.use_roi: 0
+detector.roi: [420, 50, 600, 600]
+
+# ---------- 输出 ----------
+output.dir: output
+output.save_video: 1
+output.save_csv: 1
+output.display: 1
+# 减缓视频速度，时长 ≈ 10s
+output.video_fps: 30
