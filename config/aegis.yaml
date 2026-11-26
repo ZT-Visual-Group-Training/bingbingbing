@@ -1,0 +1,59 @@
+# =============================================================================
+# AegisVision 配置文件
+# 所有参数都带单位说明，方便现场按视频/相机改参数而不动代码。
+# 相机内参与手眼矩阵来自考核数据包的 calibration/，原始文件副本放在
+# config/calib/830451/ 与 config/calib/462305/，两份完全相同。
+# =============================================================================
+
+camera:
+  width: 1440
+  height: 1080
+  # 考核相机 Hikrobot MV-CA016-10UC，40 张棋盘格标定，重投影 0.128 px
+  camera_matrix: [2334.3100677892139, 0, 722.62133349286796, 0, 2335.8999103578203, 534.62083305548731, 0, 0, 1]
+  distort_coeffs: [-0.080008805450534709, 0.085675034453367591, 0.0027903039462225331, -0.0007315334877910064, 0]
+  # 相机 -> 云台（手眼标定结果）
+  R_camera2gimbal: [0.003976606811822547, 0.04314847887603646, 0.9990607565953876, -0.9993838419654856, 0.03501223365576078, 0.0024657479067457873, -0.03487295537475099, -0.9984549825931656, 0.04326112248095271]
+  t_camera2gimbal: [0.153860889220623, -0.04368543173696476, 0.017126923246337338]
+
+armor:
+  enemy_color: red        # red / blue
+  small_width_m: 0.135    # 小装甲板外沿宽 135 mm
+  large_width_m: 0.225    # 大装甲板外沿宽 225 mm
+  height_m: 0.055         # 灯条长 55 mm（与 135:55 的宽高比判定一致）
+
+detector:
+  # 自适应阈值的基础值；实际阈值会乘上环境系数（越暗越低）
+  s_min_base: 150
+  v_min_base: 110
+  min_bar_length: 12
+  max_bar_length: 520
+  min_bar_ratio: 1.45
+  max_bar_ratio: 26
+  min_fill: 0.52
+  max_bar_angle: 35
+  max_height_ratio: 1.55
+  max_dy_ratio: 0.45
+  max_angle_diff: 12
+  min_armor_ratio: 1.55
+  max_armor_ratio: 5.20
+  # 放宽档：只在严格档一块板都没配出来时启用，救大偏航目标
+  min_armor_ratio_relaxed: 0.70
+  max_bar_angle_relaxed: 50
+  max_angle_diff_relaxed: 20
+  max_dy_ratio_relaxed: 0.90
+  min_armor_height: 14
+  max_armors: 4
+
+tracker:
+  min_hits: 3
+  max_misses: 12
+  gate_distance: 120
+  process_noise: 0.6
+  measurement_noise: 2.2
+
+output:
+  fps: 60
+  digits: true
+  roi: true
+  hud: true
+
