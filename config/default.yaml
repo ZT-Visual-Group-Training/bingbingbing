@@ -1,0 +1,198 @@
+%YAML:1.0
+# ---------------------------------------------------------------------------
+# RoboMaster armour detector configuration.
+#
+# Read with OpenCV FileStorage: keep the "%YAML:1.0" header, no UTF-8 BOM, and
+# put comments on their own line (no inline trailing comment).
+#
+# Every number is either copied from the supplied calibration or measured on the
+# supplied footage; see the README section on why each value is what it is.
+# ---------------------------------------------------------------------------
+
+camera:
+  # intrinsics copied from calibration/calibration.yaml
+  # fx = 8 mm lens / 3.45 um pixel = 2319 px, measured 2334 -> consistent
+  fx: 2334.3100677892139
+  fy: 2335.8999103578203
+  cx: 722.62133349286796
+  cy: 534.62083305548731
+  k1: -0.0800088054505347
+  k2: 0.0856750344533676
+  p1: 0.002790303946222533
+  p2: -0.0007315334877910064
+  k3: 0.0
+  width: 1440
+  height: 1080
+
+detector:
+  # "red" or "blue"
+  enemy_color: "red"
+
+  # "rb" = R-B (blue: B-R). Measured best on this footage:
+  #   R-G  348 px, bars split into 5 fragments
+  #   R-B 1882 px, two intact bars 523 / 496 px
+  chroma_mode: "rb"
+
+  # white LED ceiling lamps have R~=G~=B so every difference collapses to ~0;
+  # armour bars stay high. 85 sits in the empty band between the two.
+  diff_threshold: 85
+  use_brightness_gate: 1
+  brightness_min: 80
+
+  # opening removes speckle; closing is TALL because a bar break is a vertical gap.
+  # Swept on clip A at two ranges (frames 0-199 far / 800-999 near):
+  #   17 -> 85.0% / 85.5% hit
+  #   19 -> 87.0% / 89.5%
+  #   21 -> 91.5% / 95.5%
+  #   23 -> 92.0% / 96.0%   <- chosen, the curve saturates here
+  #   25 -> 91.5% / 96.0%
+  morph_open_kernel: 3
+  morph_close_w: 3
+  morph_close_h: 23
+  do_open: 1
+  do_close: 1
+
+  # geometry filter on each bar
+  # 8 px at fx=2334 corresponds to 16.3 m for a 56 mm bar
+  min_area: 8.0
+  max_area: 6000.0
+  min_lightbar_ratio: 1.5
+  max_lightbar_ratio: 20.0
+  min_lightbar_length: 8.0
+  min_fill_ratio: 0.45
+  max_tilt_deg: 50.0
+  min_bar_mean: 100.0
+
+  # pairing. true pairs measured: angle <= 3 deg, length ratio <= 1.10
+  # cross-plate false pairs measured: 11-18 deg, 1.27-1.52
+  max_length_ratio: 1.25
+  min_center_ratio: 1.2
+  max_center_ratio: 4.2
+  max_angle_diff_deg: 10.0
+  max_side_angle_deg: 25.0
+  # (135 - ~12 mm bar width) / 56 mm = 2.2
+  ideal_center_ratio: 2.2
+  # a 135x56 plate projects to w/h around 2.4; a wider quad means two plates
+  min_quad_aspect: 1.4
+  max_quad_aspect: 3.2
+  # reject weak pairs. Measured: genuine plates 0.30-0.62, background light
+  # fixtures that happen to form a 135:56 quad 1.14-1.72.
+  # 两根灯条的亮度比上限。
+  # 实测（500 帧，423 真目标 / 268 疑背景）：真目标 p95=1.47、最大 2.28；
+  # 背景 p95=1.11、最大 1.18 —— 背景反而更一致，这个特征没有区分度，
+  # 收紧到 1.35 只会误杀 16% 的真目标而挡不住任何背景，所以设 2.5 等于关闭。
+  max_bar_brightness_ratio: 2.5
+  # 装甲板最小像素宽度（灯条外缘到外缘）。实测分离度极好：
+  #   真目标 min 55.6 px（2 m 处的板宽约 160 px）
+  #   疑背景 max 23.2 px
+  # 取 45 px 落在两者的空档里：挡掉 268/268 背景，误杀 0/423 真目标。
+  # 物理上等价于最小可信距离：w = fx*0.135/d，45 px 约等于 7.0 m。
+  min_armor_width_px: 45.0
+  max_armor_score: 1.2
+  # how far the DRAWN box is inflated outside the PnP corners (px at 1440 width).
+  # Visual only: solvePnP keeps the real corners, so distance is unaffected.
+  draw_inflate_px: 5.0
+  # 显示用的左右内收比例（相对四边形宽度）。让绿框视觉上贴灯条内侧，
+  # 纯显示量：PnP 仍用外缘角点，所以不影响测距精度。0 = 框住外缘
+  draw_inset_ratio: 0.09
+  # 显示用上下加高比例：画出的高度 = 角点高度 x (1+ratio)，让框包住数字区域。
+  # 纯显示量，PnP 用 armor_height_m，所以加高不影响测距精度
+  draw_extra_height_ratio: 0.9
+  # 是否绘制「未通过时序确认」的候选：0 = 不画（默认，画面最干净）；
+  # 1 = 画成暗青色，用来调试时序确认逻辑
+  draw_tentative: 0
+
+  # physical armour model.
+  # armor_width_m   plate width (light bar outer edge to outer edge)
+  # bar_length_m    light bar length - the detector measures the bar, so this is
+  #                 the px<->mm scale reference
+  # armor_height_m  PLATE height. If the plate extends above/below the bars, set
+  #                 this larger than bar_length_m: the corners are extended
+  #                 symmetrically and PnP uses the same height, so the distance
+  #                 stays consistent. Equal to bar_length_m reproduces the plain
+  #                 "height = bar length" model from the brief.
+  # where the box's left/right edges sit relative to each light bar:
+  #   +1 = bar OUTER side (width = outer-to-outer)
+  #    0 = bar centre line
+  #   -1 = bar INNER side (width = the gap between the two bars)
+  # 物理上 135 mm 是"灯条外缘到外缘"，所以 PnP 必须用 +1，否则会系统性高估距离
+  plate_edge_offset: 1.0
+  armor_width_m: 0.135
+  bar_length_m: 0.056
+  armor_height_m: 0.056
+
+  # reprojection error above this is treated as an untrustworthy pose
+  max_reproj_err_px: 2.5
+  refine_iterations: 20
+
+  # ---- ROI 复用（只在预测位置附近找灯条，用来提速）----------------------
+  # enable_roi        开/关；用 --roi 启动参数也能临时打开
+  # roi_pad_px        搜索窗以预测位置为中心外扩多少像素。物理依据：
+  #                   20 ms 延迟、1 m/s 横移 = 12 px，所以 200 px 是 10 倍余量，
+  #                   足够容忍检测抖动和短暂预测误差。调小提速但容易丢目标。
+  # roi_lost_frames   连续丢失几帧后放弃窗口、回退全图搜索。
+  #                   太小 → 频繁全图（慢）；太大 → 真丢时一直空转。
+  #                   实际行为：丢失期间窗口每次放大 1.6 倍（上限 600 px），
+  #                   所以"跟错窗"不会立刻整段丢失，而是逐步扩大自愈。
+  enable_roi: 0
+  roi_pad_px: 200
+  roi_lost_frames: 3
+
+  # temporal confirmation: a candidate only becomes a fireable target after being
+  # seen confirm_hits frames in a row within confirm_gate_m of the previous
+  # position. Random background pairs flicker and never reach the count.
+  enable_confirm: 1
+  confirm_hits: 3
+  confirm_max_misses: 5
+  # 关联判据 1：中心像素距离。6 ms 内目标移动不了几像素，背景误检每帧乱跳
+  confirm_gate_px: 60.0
+  # 关联判据 2：四角宽度比（等价于距离比）。6 ms 内距离不会大幅变化
+  confirm_width_ratio: 1.4
+  # 关联判据 3：米制距离冗余判据（近距离时像素判据不够灵敏）
+  confirm_gate_m: 0.6
+
+  # ---- 匀速卡尔曼（只用于平滑位置 + 提供 ROI 预测点，不替换 PnP 输出）----
+  # tracker_process_noise Q：多不相信"匀速"。调大 → 响应快但抖；调小 → 平滑但滞后
+  # tracker_measure_noise R：多不相信 PnP 测量。调大 → 更信预测（更平滑更滞后）
+  # 166 fps 下平滑收益很小，卡尔曼的真正价值是**延迟补偿**（外推到击发时刻）
+  # ---- 反陀螺（Anti-Gyro）：对付原地自旋的敌方机器人 --------------------
+  # 原理：装甲中心沿【空间圆】运动。抓住最近若干帧的平滑坐标，用 SVD 拟合
+  #       圆所在平面（法向=转轴）、代数法拟合圆（圆心=旋转中心）、
+  #       线性拟合相位（斜率=角速度 ω）。再由 90° 刚体关系推出另外三块。
+  #
+  # 关键：陀螺车 500 deg/s 时，20 ms 就转过 10°，一块板"正对"的窗口只有 ~40 ms。
+  #       所以不能瞄"现在正对的那块"，要瞄"击发时刻最正对的那块"——
+  #       它现在可能还藏在侧面。gyro_predict_ahead_s 就是这段提前量。
+  enable_gyro: 1
+  gyro_window: 45            # 拟合窗口（帧）；166 fps 下 45 帧 ≈ 0.27 s
+  gyro_min_samples: 12       # 少于该样本数不拟合，自动回退到原卡尔曼
+  gyro_min_omega_dps: 150    # 低于该角速度判为"不是在转"，不输出
+  gyro_max_plane_rms_m: 0.05 # 平面拟合残差上限（5 cm）
+  gyro_reset_frames: 30      # 连续丢帧多少后清空（≈0.18 s）
+  gyro_predict_ahead_s: 0.08 # 提前量：向前预测多久来选"击发时刻"该瞄哪块
+  gyro_face_on_deg: 25       # |yaw| 小于它认为"已正对，可直接打"
+  # 稳定性判据：真陀螺的 ω 和旋转中心必须在一段时间内一致。
+  # 没有这三条，缓曲线会被误拟合成"小圆"（实测非陀螺数据上 ω 乱跳 1000 deg/s）
+  gyro_stabilize_window: 10
+  gyro_max_omega_rel_std: 0.25
+  gyro_max_centre_spread_m: 0.08
+  # 一步预测误差上限：模型预测的下一帧位置 vs 实测。真陀螺 <1 cm，噪声拟合更大
+  gyro_max_pred_err_m: 0.020
+  # 旋转半径先验：小装甲中心到转轴约 0.075 m，大装甲约 0.115 m
+  gyro_expected_radius_m: 0.075
+  gyro_radius_tol: 0.45
+  # 画面上的彩色圆圈默认关闭：反陀螺在非陀螺目标上偶发误判时会闪出圆圈，
+  # 反而干扰演示。数据仍然完整输出到 CSV（gyro_* 列）和 --gyro-selftest。
+  # 需要看的时候临时改成 1。
+  draw_gyro: 0
+  # yaw 角速度下限（度/秒）：社区判"是否自旋"的主判据。低于它认为没在转。
+  gyro_min_yaw_rate_dps: 200
+
+  enable_tracker: 1
+  tracker_process_noise: 0.001
+  tracker_measure_noise: 0.01
+  # 延迟补偿（秒）：从曝光到真正击发的总延迟。位姿会给外推到"击发时刻"，
+  # 画面上橙色 PRED 圆点就是预测位置。典型 20~40 ms；填 0 等于不做预测
+  predict_latency_s: 0.020
+  # 是否绘制预测点（橙色圆 + PRED 标签）和面板上的预测坐标
+  draw_prediction: 1
